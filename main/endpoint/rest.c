@@ -52,6 +52,7 @@ void rest_send(const char *data)
 
     url = config_get_char("rest_url", DEFAULT_URL);
     ret = http_post(hdl_hc, url, "application/json", data, &body, &http_status);
+    ESP_LOGI(TAG, "SEND REST TO %s", url);
     free(url);
     if (ret == ESP_OK) {
         if (http_status >= 200 && http_status <= 299) {

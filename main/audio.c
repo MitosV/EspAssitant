@@ -842,7 +842,7 @@ static esp_err_t start_rec(void)
         .rb_size = 12 * 1024, // default is 6 * 1024
         .partition_label = "model",
         .mn_language = ESP_MN_ENGLISH,
-        .wn_wakeword = wake_word,
+        .wn_wakeword = "jarvis",//wake_word,
     };
 
     ESP_LOGI(TAG, "Using record buffer '%d'", config_get_int("record_buffer", DEFAULT_RECORD_BUFFER));
@@ -961,7 +961,7 @@ static void at_read(void *data)
                     recording = false;
                     stream_to_api = false;
                     if (lvgl_port_lock(lvgl_lock_timeout)) {
-                        lv_label_set_text_static(lbl_ln3, multiwake_won ? "Thinking..." : "WOW Active - Exiting");
+                        lv_label_set_text_static(lbl_ln3, multiwake_won ? "Pensando..." : "WOW Active - Exiting");
                         lv_obj_add_flag(btn_cancel, LV_OBJ_FLAG_HIDDEN);
                         lvgl_port_unlock();
                     }
@@ -1064,8 +1064,9 @@ esp_err_t init_audio(void)
         strncpy(wake_help, "Say 'Hi ESP' to start!", STR_WAKE_LEN);
 #endif
     } else if (strcmp(wake_word, "alexa") == 0) {
-#if defined(CONFIG_SR_WN_WN9_ALEXA) || defined(CONFIG_SR_WN_WN9_ALEXA_MULTI)
-        strncpy(wake_help, "Say 'Alexa' to start!", STR_WAKE_LEN);
+//#if defined(CONFIG_SR_WN_WN9_ALEXA) || defined(CONFIG_SR_WN_WN9_ALEXA_MULTI)
+#if defined(CONFIG_SR_WN_WN9_JARVIS_TTS_MULTI) || defined(CONFIG_SR_WN_WN9_JARVIS_TTS)
+        strncpy(wake_help, "Say 'Jarvis' to start!", STR_WAKE_LEN);
 #endif
     } else if (strcmp(wake_word, "hilexin") == 0) {
 #if defined(CONFIG_SR_WN_WN9_HILEXIN) || defined(CONFIG_SR_WN_WN9_HILEXIN_MULTI)

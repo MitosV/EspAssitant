@@ -36,8 +36,8 @@ void init_ui(void)
             lv_style_init(&lv_st_willow);
 
             // Willow colors
-            lv_color_t lv_clr_willow = lv_color_hex(0x583759);
-            lv_color_t lv_clr_willow_alt = lv_color_hex(0xfbe870);
+            lv_color_t lv_clr_willow = lv_color_hex(0x338ce4);
+            lv_color_t lv_clr_willow_alt = lv_color_hex(0xfc471e);
 
             // Attach background color to screen
             lv_obj_set_style_bg_color(scr_act, lv_clr_willow, LV_PART_MAIN);
@@ -67,7 +67,7 @@ void init_ui(void)
 #endif
 
             lv_label_set_text_static(lbl_btn_cancel, "Cancel");
-            lv_label_set_text_static(lbl_hdr, "Welcome to Willow!");
+            lv_label_set_text_static(lbl_hdr, "Bienvenido a Juanito");
             lv_obj_add_flag(btn_cancel, LV_OBJ_FLAG_HIDDEN);
             lv_obj_add_flag(lbl_ln1, LV_OBJ_FLAG_HIDDEN);
             lv_obj_add_flag(lbl_ln2, LV_OBJ_FLAG_HIDDEN);
