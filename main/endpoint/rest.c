@@ -1,3 +1,4 @@
+#include "cJSON.h"
 #include "audio_hal.h"
 #include "audio_thread.h"
 #include "esp_http_client.h"
@@ -12,6 +13,7 @@
 #include "shared.h"
 #include "slvgl.h"
 #include "timer.h"
+#include "mood_manager.h"
 
 #define DEFAULT_AUTH_HEADER ""
 #define DEFAULT_AUTH_PASS   ""
@@ -54,6 +56,7 @@ void rest_send(const char *data)
     ret = http_post(hdl_hc, url, "application/json", data, &body, &http_status);
     ESP_LOGI(TAG, "SEND REST TO %s", url);
     free(url);
+
     if (ret == ESP_OK) {
         if (http_status >= 200 && http_status <= 299) {
             ok = true;
@@ -62,10 +65,23 @@ void rest_send(const char *data)
         ESP_LOGE(TAG, "failed to read HTTP POST response");
     }
 
+
     if (ok) {
-        if (body != NULL && strlen(body) > 1) {
-            ESP_LOGI(TAG, "REST response: %s", body);
-            war.fn_ok(body);
+
+        if (body != NULL) {
+            cJSON *json = cJSON_Parse(body);
+
+            cJSON *text = cJSON_GetObjectItemCaseSensitive(json, "text");
+            cJSON *status = cJSON_GetObjectItemCaseSensitive(json, "state");
+            if (cJSON_IsString(text) && text->valuestring != NULL && strlen(text->valuestring) > 1) {
+                ESP_LOGI(TAG, "REST response: %s", text->valuestring);
+                war.fn_ok(text->valuestring);
+            }
+            if (cJSON_IsString(status) && status->valuestring != NULL) {
+                ESP_LOGI(TAG, "REST state: %s", status->valuestring);
+                update_mood(status->valuestring);
+            }
+            cJSON_Delete(json);
         } else {
             ESP_LOGI(TAG, "REST successful");
             war.fn_ok("Success");
@@ -81,9 +97,15 @@ void rest_send(const char *data)
         lv_obj_set_style_text_align(lbl_ln4, LV_TEXT_ALIGN_LEFT, 0);
         lv_obj_set_style_text_align(lbl_ln5, LV_TEXT_ALIGN_LEFT, 0);
         lv_obj_remove_event_cb(lbl_ln4, cb_btn_cancel);
-        if (body != NULL && strlen(body) > 1) {
-            lv_label_set_text_static(lbl_ln4, "Response:");
-            lv_label_set_text(lbl_ln5, body);
+        if (body != NULL) {
+            cJSON *json = cJSON_Parse(body);
+
+            cJSON *text = cJSON_GetObjectItemCaseSensitive(json, "text");
+            if (cJSON_IsString(text) && text->valuestring != NULL && strlen(text->valuestring) > 1) {
+                lv_label_set_text_static(lbl_ln4, "Respuesta:");
+                lv_label_set_text(lbl_ln5, text->valuestring);
+            }
+            cJSON_Delete(json);
         } else {
             lv_label_set_text_static(lbl_ln4, "Command status:");
             lv_label_set_text(lbl_ln5, ok ? "Success" : "Error");

@@ -20,6 +20,7 @@
 #include "tasks.h"
 #include "timer.h"
 #include "ui.h"
+#include "servo.h"
 #include "was.h"
 
 #include "endpoint/hass.h"
@@ -83,6 +84,7 @@ void app_main(void)
     init_spiffs_user();
     config_parse();
     init_display();
+    init_servo();
     init_lvgl_display();
     init_ui();
 

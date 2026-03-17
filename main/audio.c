@@ -33,6 +33,7 @@
 #include "timer.h"
 #include "ui.h"
 #include "was.h"
+#include "servo.h"
 
 #include "endpoint/hass.h"
 #include "endpoint/openhab.h"
