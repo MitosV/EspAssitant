@@ -34,6 +34,7 @@
 #include "ui.h"
 #include "was.h"
 #include "servo.h"
+#include "light_manager.h"
 
 #include "endpoint/hass.h"
 #include "endpoint/openhab.h"
@@ -471,9 +472,9 @@ static esp_err_t cb_ar_event(audio_rec_evt_t *are, void *data)
                 bool was_mode = config_get_bool("was_mode", DEFAULT_WAS_MODE);
                 char *command_endpoint = config_get_char("command_endpoint", DEFAULT_COMMAND_ENDPOINT);
                 char *json;
-                json = calloc(29 + strlen(lookup_cmd_multinet(command_id)), sizeof(char));
-                snprintf(json, 29 + strlen(lookup_cmd_multinet(command_id)), "{\"text\":\"%s\",\"language\":\"en\"}",
-                         lookup_cmd_multinet(command_id));
+                json = calloc(39 + strlen(lookup_cmd_multinet(command_id)), sizeof(char));
+                snprintf(json, 39 + strlen(lookup_cmd_multinet(command_id)), "{\"text\":\"%s\",\"language\":\"es\", \"light\":\"%s\"}",
+                         lookup_cmd_multinet(command_id), is_light_active() ? "true" : "false");
                 if (was_mode) {
                     was_send_endpoint(json, false);
                 } else if (strcmp(command_endpoint, "Home Assistant") == 0) {

@@ -22,6 +22,7 @@
 #include "ui.h"
 #include "servo.h"
 #include "was.h"
+#include "light_manager.h"
 
 #include "endpoint/hass.h"
 
@@ -87,6 +88,7 @@ void app_main(void)
     init_servo();
     init_lvgl_display();
     init_ui();
+    init_light_manager();
 
     ESP_ERROR_CHECK(esp_netif_init());
 

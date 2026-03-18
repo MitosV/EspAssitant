@@ -14,6 +14,7 @@
 #include "slvgl.h"
 #include "timer.h"
 #include "mood_manager.h"
+#include "light_manager.h"
 
 #define DEFAULT_AUTH_HEADER ""
 #define DEFAULT_AUTH_PASS   ""
@@ -72,14 +73,14 @@ void rest_send(const char *data)
             cJSON *json = cJSON_Parse(body);
 
             cJSON *text = cJSON_GetObjectItemCaseSensitive(json, "text");
-            cJSON *status = cJSON_GetObjectItemCaseSensitive(json, "state");
+            cJSON *light = cJSON_GetObjectItemCaseSensitive(json, "light");
             if (cJSON_IsString(text) && text->valuestring != NULL && strlen(text->valuestring) > 1) {
                 ESP_LOGI(TAG, "REST response: %s", text->valuestring);
                 war.fn_ok(text->valuestring);
             }
-            if (cJSON_IsString(status) && status->valuestring != NULL) {
-                ESP_LOGI(TAG, "REST state: %s", status->valuestring);
-                update_mood(status->valuestring);
+            if (cJSON_IsBool(light)) {
+                ESP_LOGI(TAG, "REST light state: %s", cJSON_IsTrue(light) ? "true" : "false");
+                light_set_active(cJSON_IsTrue(light));
             }
             cJSON_Delete(json);
         } else {
