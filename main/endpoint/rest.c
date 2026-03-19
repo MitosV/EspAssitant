@@ -70,6 +70,7 @@ void rest_send(const char *data)
     if (ok) {
 
         if (body != NULL) {
+            ESP_LOGI(TAG, "RAW BODY: %s", body);
             cJSON *json = cJSON_Parse(body);
 
             cJSON *text = cJSON_GetObjectItemCaseSensitive(json, "text");
@@ -79,8 +80,13 @@ void rest_send(const char *data)
                 war.fn_ok(text->valuestring);
             }
             if (cJSON_IsBool(light)) {
-                ESP_LOGI(TAG, "REST light state: %s", cJSON_IsTrue(light) ? "true" : "false");
-                light_set_active(cJSON_IsTrue(light));
+                bool state = cJSON_IsTrue(light);
+                ESP_LOGI(TAG, "REST light state (bool): %s", state ? "true" : "false");
+                light_set_active(state);
+            } else if (cJSON_IsString(light) && light->valuestring != NULL && strlen(text->valuestring) > 1) {
+                bool state = (strcmp(light->valuestring, "true") == 0);
+                ESP_LOGI(TAG, "REST light state (string): %s", state ? "true" : "false");
+                light_set_active(state);
             }
             cJSON_Delete(json);
         } else {

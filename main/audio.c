@@ -633,7 +633,19 @@ static esp_err_t hdl_ev_hs_to_api(http_stream_event_msg_t *msg)
             } else if (strcmp(command_endpoint, "openHAB") == 0) {
                 openhab_send(buf);
             } else if (strcmp(command_endpoint, "REST") == 0) {
-                rest_send(buf);
+                cJSON *json = cJSON_Parse(buf);
+                if (json != NULL) {
+                    cJSON_AddStringToObject(json, "light", is_light_active() ? "true" : "false"); // o "false"
+
+                    char *new_body = cJSON_PrintUnformatted(json);
+                    ESP_LOGI(TAG, "NEW BODY: %s", new_body);
+
+                    rest_send(new_body);
+
+                    cJSON_Delete(json);
+                    free(new_body);
+                }
+                //rest_send(buf);
             }
             free(command_endpoint);
 
