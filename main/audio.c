@@ -138,6 +138,35 @@ void play_audio_ok(void *data)
     play_audio("spiffs://spiffs/user/audio/success.wav");
 }
 
+static void wait_audio_done(void)
+{
+    esp_audio_state_t state;
+    /* Drain stale events first */
+    while (xQueueReceive(q_ea, &state, 0) == pdTRUE) {}
+    /* Wait up to 5 s for a terminal status (STOPPED / FINISHED / ERROR) */
+    while (xQueueReceive(q_ea, &state, 5000 / portTICK_PERIOD_MS) == pdTRUE) {
+        if (state.status > AUDIO_STATUS_RUNNING) {
+            break;
+        }
+    }
+}
+
+void play_audio_alarm(void)
+{
+    int orig_vol = config_get_int("speaker_volume", DEFAULT_SPEAKER_VOLUME);
+    esp_audio_vol_set(hdl_ea, 100);
+
+    for (int i = 0; i < 5; i++) {
+        gpio_set_level(get_pa_enable_gpio(), 1);
+        play_audio("spiffs://spiffs/user/audio/error.wav");
+        wait_audio_done();
+        vTaskDelay(150 / portTICK_PERIOD_MS);
+    }
+
+    esp_audio_vol_set(hdl_ea, orig_vol);
+    vTaskDelay(300 / portTICK_PERIOD_MS);
+}
+
 static void play_audio_wis_tts(void *data)
 {
     char *url = NULL;

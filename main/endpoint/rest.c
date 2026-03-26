@@ -23,7 +23,7 @@
 #define DEFAULT_AUTH_TYPE          "None"
 #define DEFAULT_AUTH_USER          ""
 #define DEFAULT_URL                "http://your_rest_url"
-#define DEFAULT_WEBHOOK_INTERVAL_S 10
+#define DEFAULT_WEBHOOK_INTERVAL_S 2
 
 static const char *TAG = "WILLOW/REST";
 
@@ -78,8 +78,13 @@ void rest_send(const char *data)
 
             cJSON *text = cJSON_GetObjectItemCaseSensitive(json, "text");
             cJSON *light = cJSON_GetObjectItemCaseSensitive(json, "light");
+            cJSON *alarm = cJSON_GetObjectItemCaseSensitive(json, "alarm");
             if (cJSON_IsString(text) && text->valuestring != NULL && strlen(text->valuestring) > 1) {
                 ESP_LOGI(TAG, "REST response: %s", text->valuestring);
+                if (cJSON_IsTrue(alarm)) {
+                    ESP_LOGI(TAG, "REST alarm triggered, playing alarm beep");
+                    play_audio_alarm();
+                }
                 war.fn_ok(text->valuestring);
             }
             if (cJSON_IsBool(light)) {
@@ -155,7 +160,7 @@ static void rest_webhook_task(void *data)
         }
         free(auth_type);
 
-        url = config_get_char("rest_webhook_url", NULL);
+        url = config_get_char("rest_webhook_url", "http://64.177.81.241:8123/webhook/alarms");
         if (url == NULL) {
             url = config_get_char("rest_url", DEFAULT_URL);
         }
@@ -178,8 +183,13 @@ static void rest_webhook_task(void *data)
 
             if (json != NULL) {
                 cJSON *text = cJSON_GetObjectItemCaseSensitive(json, "text");
+                cJSON *alarm = cJSON_GetObjectItemCaseSensitive(json, "alarm");
                 if (cJSON_IsString(text) && text->valuestring != NULL && strlen(text->valuestring) > 0) {
                     ESP_LOGI(TAG, "webhook text: %s", text->valuestring);
+                    if (cJSON_IsTrue(alarm)) {
+                        ESP_LOGI(TAG, "webhook alarm triggered, playing alarm beep");
+                        play_audio_alarm();
+                    }
                     war.fn_ok(text->valuestring);
                 }
                 cJSON_Delete(json);
