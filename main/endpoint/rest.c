@@ -5,6 +5,8 @@
 #include "esp_log.h"
 #include "esp_lvgl_port.h"
 #include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "lvgl.h"
 
 #include "audio.h"
@@ -16,11 +18,12 @@
 #include "mood_manager.h"
 #include "light_manager.h"
 
-#define DEFAULT_AUTH_HEADER ""
-#define DEFAULT_AUTH_PASS   ""
-#define DEFAULT_AUTH_TYPE   "None"
-#define DEFAULT_AUTH_USER   ""
-#define DEFAULT_URL         "http://your_rest_url"
+#define DEFAULT_AUTH_HEADER        ""
+#define DEFAULT_AUTH_PASS          ""
+#define DEFAULT_AUTH_TYPE          "None"
+#define DEFAULT_AUTH_USER          ""
+#define DEFAULT_URL                "http://your_rest_url"
+#define DEFAULT_WEBHOOK_INTERVAL_S 10
 
 static const char *TAG = "WILLOW/REST";
 
@@ -123,4 +126,71 @@ void rest_send(const char *data)
     reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), false);
 
     free(body);
+}
+
+static void rest_webhook_task(void *data)
+{
+    char *body = NULL;
+    char *url = NULL;
+    esp_err_t ret;
+    int http_status;
+    int interval_s = config_get_int("rest_webhook_interval", DEFAULT_WEBHOOK_INTERVAL_S);
+
+    while (true) {
+        vTaskDelay((interval_s * 1000) / portTICK_PERIOD_MS);
+
+        esp_http_client_handle_t hdl_hc = init_http_client();
+
+        char *auth_type = config_get_char("rest_auth_type", DEFAULT_AUTH_TYPE);
+        if (strcmp(auth_type, "Header") == 0) {
+            char *auth_header = config_get_char("rest_auth_header", DEFAULT_AUTH_HEADER);
+            esp_http_client_set_header(hdl_hc, "Authorization", auth_header);
+            free(auth_header);
+        } else if (strcmp(auth_type, "Basic") == 0) {
+            char *pass = config_get_char("rest_auth_pass", DEFAULT_AUTH_PASS);
+            char *user = config_get_char("rest_auth_user", DEFAULT_AUTH_USER);
+            http_set_basic_auth(hdl_hc, user, pass);
+            free(pass);
+            free(user);
+        }
+        free(auth_type);
+
+        url = config_get_char("rest_webhook_url", NULL);
+        if (url == NULL) {
+            url = config_get_char("rest_url", DEFAULT_URL);
+        }
+
+        ESP_LOGI(TAG, "polling webhook: %s", url);
+        ret = http_get(hdl_hc, url, &body, &http_status);
+        free(url);
+
+        if (ret != ESP_OK || http_status < 200 || http_status > 299) {
+            ESP_LOGW(TAG, "webhook poll failed or non-2xx status: %d", http_status);
+            free(body);
+            body = NULL;
+            continue;
+        }
+
+        if (body != NULL) {
+            cJSON *json = cJSON_Parse(body);
+            free(body);
+            body = NULL;
+
+            if (json != NULL) {
+                cJSON *text = cJSON_GetObjectItemCaseSensitive(json, "text");
+                if (cJSON_IsString(text) && text->valuestring != NULL && strlen(text->valuestring) > 0) {
+                    ESP_LOGI(TAG, "webhook text: %s", text->valuestring);
+                    war.fn_ok(text->valuestring);
+                }
+                cJSON_Delete(json);
+            }
+        }
+    }
+
+    vTaskDelete(NULL);
+}
+
+void rest_webhook_start(void)
+{
+    xTaskCreate(rest_webhook_task, "rest_webhook", 4 * 1024, NULL, 5, NULL);
 }

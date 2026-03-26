@@ -25,6 +25,7 @@
 #include "light_manager.h"
 
 #include "endpoint/hass.h"
+#include "endpoint/rest.h"
 
 #ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
 #include "psa/crypto.h"
@@ -173,6 +174,8 @@ err_nvs:
         char *command_endpoint = config_get_char("command_endpoint", DEFAULT_COMMAND_ENDPOINT);
         if (strcmp(command_endpoint, "Home Assistant") == 0) {
             init_hass();
+        } else if (strcmp(command_endpoint, "REST") == 0) {
+            rest_webhook_start();
         }
         free(command_endpoint);
     }
