@@ -35,6 +35,7 @@
 #include "was.h"
 #include "servo.h"
 #include "light_manager.h"
+#include "door_manager.h"
 
 #include "endpoint/hass.h"
 #include "endpoint/openhab.h"
@@ -665,6 +666,7 @@ static esp_err_t hdl_ev_hs_to_api(http_stream_event_msg_t *msg)
                 cJSON *json = cJSON_Parse(buf);
                 if (json != NULL) {
                     cJSON_AddStringToObject(json, "light", is_light_active() ? "true" : "false"); // o "false"
+                    cJSON_AddStringToObject(json, "door", door_get_state() == DOOR_OPEN ? "true" : "false");
 
                     char *new_body = cJSON_PrintUnformatted(json);
                     ESP_LOGI(TAG, "NEW BODY: %s", new_body);

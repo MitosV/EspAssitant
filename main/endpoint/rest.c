@@ -15,8 +15,9 @@
 #include "shared.h"
 #include "slvgl.h"
 #include "timer.h"
-#include "mood_manager.h"
 #include "light_manager.h"
+#include "door_manager.h"
+#include "servo.h"
 
 #define DEFAULT_AUTH_HEADER        ""
 #define DEFAULT_AUTH_PASS          ""
@@ -78,6 +79,7 @@ void rest_send(const char *data)
 
             cJSON *text = cJSON_GetObjectItemCaseSensitive(json, "text");
             cJSON *light = cJSON_GetObjectItemCaseSensitive(json, "light");
+            cJSON *door = cJSON_GetObjectItemCaseSensitive(json, "door");
             cJSON *alarm = cJSON_GetObjectItemCaseSensitive(json, "alarm");
             if (cJSON_IsString(text) && text->valuestring != NULL && strlen(text->valuestring) > 1) {
                 ESP_LOGI(TAG, "REST response: %s", text->valuestring);
@@ -91,10 +93,24 @@ void rest_send(const char *data)
                 bool state = cJSON_IsTrue(light);
                 ESP_LOGI(TAG, "REST light state (bool): %s", state ? "true" : "false");
                 light_set_active(state);
-            } else if (cJSON_IsString(light) && light->valuestring != NULL && strlen(text->valuestring) > 1) {
+            } else if (cJSON_IsString(light) && light->valuestring != NULL && strlen(light->valuestring) > 0) {
                 bool state = (strcmp(light->valuestring, "true") == 0);
                 ESP_LOGI(TAG, "REST light state (string): %s", state ? "true" : "false");
                 light_set_active(state);
+            }
+
+            if (cJSON_IsBool(door)) {
+                bool state = cJSON_IsTrue(door);
+                ESP_LOGI(TAG, "REST door state (bool): %s", state ? "true" : "false");
+                if (state != (door_get_state() == DOOR_OPEN)) {
+                    state ? door_open_rest() : door_close();
+                }
+            } else if (cJSON_IsString(door) && door->valuestring != NULL && strlen(door->valuestring) > 0) {
+                bool state = (strcmp(door->valuestring, "true") == 0);
+                ESP_LOGI(TAG, "REST door state (string): %s", state ? "true" : "false");
+                if (state != (door_get_state() == DOOR_OPEN)) {
+                    state ? door_open_rest() : door_close();
+                }
             }
             cJSON_Delete(json);
         } else {

@@ -23,6 +23,7 @@
 #include "servo.h"
 #include "was.h"
 #include "light_manager.h"
+#include "door_manager.h"
 
 #include "endpoint/hass.h"
 #include "endpoint/rest.h"
@@ -86,7 +87,8 @@ void app_main(void)
     init_spiffs_user();
     config_parse();
     init_display();
-    //init_servo();
+    init_servo();
+    door_manager_init();
     init_light_manager();
     init_lvgl_display();
     init_ui();
